@@ -73,6 +73,12 @@ int SocketUDP(unsigned short port){
 		exit(2);
 	}
 	
+	int on=1;
+	if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int))==-1){
+		printf("\x1B[31mERROR:\x1B[0m UDP set socket opt fail. %s\n", strerror(errno));
+		exit(2);
+	}
+	
 	addr.sin_family=AF_INET;
 	addr.sin_port=htons(port);
 	addr.sin_addr.s_addr=INADDR_ANY;
