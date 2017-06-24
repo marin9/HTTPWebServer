@@ -17,6 +17,7 @@
 #define UNKNOWN_PORT		5
 #define FILE_ALREADY_EXIST	6
 
+#define HEADLEN		(2*sizeof(int))
 #define DATALEN		1024
 
 struct packet{
@@ -27,8 +28,10 @@ struct packet{
 
 void StartServer(unsigned short port, char *dir, int write);
 int CreateProcess();
-int RecvFrom(int sock, char *buff, struct sockaddr_in* addr, socklen_t *len);
+int RecvFrom(int sock, char *buff, int size, struct sockaddr_in* addr, socklen_t *len);
 void SendTo(int sock, char* buff, int size, struct sockaddr_in* addr);
 void MSendError(int csock, char *buff, struct sockaddr_in *addr, int errcode, char* msg);
+void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir);
+void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir);
 
 #endif

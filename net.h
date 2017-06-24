@@ -16,6 +16,7 @@
 void printLocalAddrs();
 int SocketUDP(unsigned short port);
 int SocketTCP(unsigned short port);
+int equalsAddr(struct sockaddr_in* addr1, struct sockaddr_in* addr2);
 
 #endif
 

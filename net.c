@@ -86,6 +86,20 @@ int SocketTCP(unsigned short port){
 	return sock;
 }
 
-
+int equalsAddr(struct sockaddr_in* addr1, struct sockaddr_in* addr2){
+	unsigned short port1=addr1->sin_port;
+	unsigned short port2=addr2->sin_port;
+	
+	if(port1!=port2) return 0;
+	
+	char host1[NI_MAXHOST];
+	char host2[NI_MAXHOST];	
+	inet_ntop(AF_INET, &(addr1->sin_addr), host1, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &(addr2->sin_addr), host2, INET_ADDRSTRLEN);
+	
+	if(strcmp(host1, host2)!=0) return 0;
+	
+	return 1;
+}
 
 
