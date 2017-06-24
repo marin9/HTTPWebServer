@@ -6,14 +6,14 @@
 #include "net.h"
 #include "file.h"
 #include "web.h"
+#include "mft.h"
 
 #define BUFFLEN 512
-
+//TODO main.c(add mft) mft.c mft.h client.c
 
 void GetOpt(int argc, char **argv, char *dir, unsigned short *uport, unsigned short *tport);
 void LoadHtmlDoc();
 void printServerInfo(int uport, int tport, char *dir);
-void startServer(unsigned short port, char* dir);
 void sigchld_handler();
 
 char *HTMLDOC=NULL;
