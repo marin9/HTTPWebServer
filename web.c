@@ -4,7 +4,6 @@
 #include "mimetype.h"
 
 #define BUFFLEN  2048
-#define PATHLEN	 256
 
 extern char *HTMLDOC;
 
@@ -29,9 +28,9 @@ void web(int sock, char *dir){
 		SendFile(sock, buffer+1);
 		
 	}else if(strncmp(buffer, "/res/", 4)==0){
-		char path[PATHLEN];
-		getcwd(path, PATHLEN);
-		strncat(path, buffer, PATHLEN);		
+		char path[NAMELEN];
+		getcwd(path, NAMELEN);
+		strncat(path, buffer, NAMELEN);		
 		SendFile(sock, path);
 		
 	}else{
@@ -119,10 +118,10 @@ void SendList(int csock, char *path, char *request){
 	buffer[0]=0;
 	strcat(buffer, HTMLDOC);
 	
-	char hostname[128];
-    gethostname(hostname, 128);
+	char hostname[HOSNAMETLEN];
+    gethostname(hostname, HOSNAMETLEN);
  
-	char backPath[PATHLEN]={0};
+	char backPath[NAMELEN]={0};
 	getBackDir(backPath, request);
 
 	char *data=getHtmlDataList(path);

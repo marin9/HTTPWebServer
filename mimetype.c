@@ -33,6 +33,7 @@ const struct ftype filetypes[]={{"png", "image/png", "img"},
 						  		{"rar", "application/octet-stream", "com"},
 						  		{"zip", "application/zip", "com"},
 						  		{"iso", "application/x-iso9660-image", "com"},
+						  		{"jar", "application/java-archive", "com"},  		
 						  
 						  		{"exe", "application/octet-stream", "exe"},
 						  		{"sh", "text/x-script.sh", "exe"},
@@ -60,11 +61,11 @@ const struct ftype filetypes[]={{"png", "image/png", "img"},
 
 const char* getFileType(char *name, char *mtype){
 	char ext[NAMELEN];
-	int i=0;
+	int i=strlen(name)-1;
 	int j=0;
 
 	//find extension
-	while(name[i]!='.' && name[i]!=0) ++i;
+	while(name[i]!='.' && i>0) --i;
 	if(name[i]==0){
 		return "unk";
 	}

@@ -2,8 +2,8 @@
 
 
 void printLocalAddrs(){
-	char hostname[128];
-    gethostname(hostname, 128);
+	char hostname[HOSNAMETLEN];
+    gethostname(hostname, HOSNAMETLEN);
 	printf("Host name: %s\n\n", hostname);
 
 	struct ifaddrs *addr, *paddr;
@@ -26,43 +26,6 @@ void printLocalAddrs(){
 	printf("\n");
 	freeifaddrs(paddr);
 }
-
-char* getIPv4ByName(char *name){
-	struct addrinfo hints, *res, *pom;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family=AF_INET;
-	hints.ai_flags |= AI_CANONNAME;
-
-	if(getaddrinfo(name, NULL, &hints, &res)) return NULL;
-
-	pom=res;
-	char *address=(char*)malloc(NI_MAXHOST);	
-	
-	inet_ntop(res->ai_family, &((struct sockaddr_in*)res->ai_addr)->sin_addr,address,NI_MAXHOST);
-
-	freeaddrinfo(pom);
-	return address;
-}
-
-char* getNameByIP(char *ip_str){
-	char *name=(char*)malloc(NI_MAXHOST);
-
-	struct sockaddr_in sa;
-	sa.sin_family=AF_INET;
-
-	if(inet_pton(AF_INET, ip_str, &(sa.sin_addr))!=1){
-		free(name);
-		return NULL;
-	}
-
-	if(getnameinfo((struct sockaddr*)&sa,sizeof(struct sockaddr_in), name, NI_MAXHOST, NULL, 0,NI_NAMEREQD)!=0){
-		free(name);
-		return NULL;
-	}
-	return name;	
-}
-
 
 int SocketUDP(unsigned short port){
 	int sock;

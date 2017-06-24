@@ -2,7 +2,6 @@
 #include "malloc.h"
 #include "net.h"
 
-
 void web(int sock, char *dir);
 void RecvRequest(int csock, char *buffer, int blen, char *c_ip, int ip_len);
 int isFinish(char *buff, int sum, int n);

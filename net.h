@@ -11,11 +11,9 @@
 #include <netdb.h>
 #include <errno.h>
 
+#define HOSNAMETLEN		128
 
 void printLocalAddrs();
-char* getIPv4ByName(char *name);
-char* getNameByIP(char *ip_str);
-
 int SocketUDP(unsigned short port);
 int SocketTCP(unsigned short port);
 
