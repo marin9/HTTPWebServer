@@ -49,7 +49,7 @@ int main(){
 			strcpy(hostname, buffer);
 			
 			GetIpFromName(buffer, addr);
-			GetNameFromIP(buffer, hostname);						
+			GetNameFromIP(buffer, hostname);
 			
 		}else if(cm==PORT) port=atoi(buffer);			
 		else if(cm==PUT) PutFile(port, addr, buffer);		
