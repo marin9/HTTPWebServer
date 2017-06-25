@@ -3,14 +3,14 @@ FLAGS=-Wall -Wextra -c
 OBJ=main.o net.o file.o web.o mimetype.o mft.o
 
 
-all: mweb client
+all: mweb mft
 
 mweb : $(OBJ)
 	$(CC) $(OBJ) -o mweb
-	
-client : client.o net.o
-	$(CC) client.o net.o -o client
-	
+
+mft : client.o net.o mft.o
+	$(CC) client.o net.o mft.o -o mft
+
 
 mimetype.o : mimetype.c
 	$(CC) $(FLAGS) mimetype.c
@@ -30,9 +30,12 @@ main.o : main.c
 mft.o : mft.c
 	$(CC) $(FLAGS) mft.c
 
+client.o : client.c
+	$(CC) $(FLAGS) client.c
+
 
 clean:
 	rm *.o
 	rm mweb
-	rm client
+	rm mft
 
