@@ -16,13 +16,6 @@ void StartServer(unsigned short port, char* dir, int write){
 		else close(sock);
 		
 		int csock=SocketUDP(0);
-		struct timeval timeout;      
-		timeout.tv_sec=3;
-		timeout.tv_usec=0;
-		if(setsockopt(csock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout))<0){
-			printf("\x1B[33mERROR:\x1B[0m Set UDP socket option timeout fail: %s.\n", strerror(errno));
-			exit(4);
-		}
 	
 		if(buffer.code==READ) ReadFile(csock, (char*)&buffer, &addr, dir);
 		else if(buffer.code==WRITE && write) WriteFile(csock, (char*)&buffer, &addr, dir);
@@ -34,6 +27,16 @@ void StartServer(unsigned short port, char* dir, int write){
 	}
 	close(sock);
 	exit(0);
+}
+
+void SetSocketTimeout(int sock, int sec){
+	struct timeval timeout;      
+	timeout.tv_sec=sec;
+	timeout.tv_usec=0;
+	if(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout))<0){
+		printf("\x1B[33mERROR:\x1B[0m Set UDP socket option timeout fail: %s.\n", strerror(errno));
+		exit(4);
+	}
 }
 
 int CreateProcess(){
@@ -48,7 +51,7 @@ int CreateProcess(){
 int RecvFrom(int sock, char* buff, int size, struct sockaddr_in* addr, socklen_t *len){
 	int n=recvfrom(sock, buff, size, 0, (struct sockaddr*)addr, len);
 	if(n<0){
-		if(errno==EAGAIN || errno==EWOULDBLOCK) return 0;
+		if(errno==EAGAIN || errno==EWOULDBLOCK) return -1;
 		printf("\x1B[33mERROR:\x1B[0m Receive UDP request fail: %s.\n", strerror(errno));
 		exit(2);
 	}
@@ -93,6 +96,8 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		return;
 	}
 	
+	SetSocketTimeout(sock, 3);
+	
 	int packNum=1;
 	int i;
 	struct sockaddr_in rcvaddr;
@@ -101,13 +106,17 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		
 	while(!feof(file)){
 		int n=fread(buff+HEADLEN, 1, DATALEN, file);
+		if(n<0){
+			MSendError(sock, buff, &rcvaddr, NOT_DEFINED, strerror(errno));
+			return;
+		}
 		((struct packet*)buff)->code=DATA;
 		((struct packet*)buff)->num=packNum;		
 		
 		for(i=0;i<5;++i){
 			SendTo(sock, buff, n+HEADLEN, addr);
 			
-			if(!RecvFrom(sock, (char*)ackResponse, HEADLEN, &rcvaddr, &rcvlen)){
+			if(RecvFrom(sock, (char*)ackResponse, HEADLEN, &rcvaddr, &rcvlen)==-1){
 				continue;
 			
 			}else if(!equalsAddr(addr, &rcvaddr)){
@@ -124,7 +133,67 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 }
 
 void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
-	//TODO
+	if((strlen(buff+HEADLEN)+strlen(dir))>DATALEN){
+		printf("\x1B[33mERROR:\x1B[0m Path too long.\n");
+		return;
+	}
 	
+	char name[DATALEN];
+	strcpy(name, dir);
+	strcat(name, "/");
+	strcat(name, buff+HEADLEN);
+	
+	if(TestFileExist(name)){
+		MSendError(sock, buff, addr, FILE_ALREADY_EXIST, "File already exist.\n");
+		return;
+	}
+	
+	FILE *file=fopen(name, "w+b");
+	if(file==NULL){
+		if(errno==EACCES) MSendError(sock, buff, addr, ACCESS_VIOLATION, "Access violation.");
+		else MSendError(sock, buff, addr, NOT_DEFINED, strerror(errno));
+		return;
+	}
+	
+	int packNum=0;
+	struct sockaddr_in rcvaddr;
+	socklen_t rcvlen=sizeof(rcvaddr);
+	
+	while(1){
+		SendAck(sock, buff, addr, packNum);
+		
+		while(1){
+			int n=RecvFrom(sock, buff, sizeof(struct packet), &rcvaddr, &rcvlen);
+						
+			if(!equalsAddr(addr, &rcvaddr)){ 
+				char tmpbuff[32];
+				MSendError(sock, tmpbuff, &rcvaddr, UNKNOWN_PORT, "Unknown port.\n");
+				continue;
+				
+			}else if( ((struct packet*)buff)->code==DATA && ((struct packet*)buff)->num==(packNum+1)){
+				int s=fwrite(buff+HEADLEN, 1, n, file);
+				if(s!=n){
+					MSendError(sock, buff, addr, NOT_DEFINED, strerror(errno));
+					return;
+				}
+				break;
+			}
+		}
+		++packNum;
+	}	
+	fclose(file);	
 }
 
+void SendAck(int sock, char *buff, struct sockaddr_in* addr, int num){
+	((struct packet*)buff)->code=ACK;
+	((struct packet*)buff)->num=num;
+	
+	SendTo(sock, buff, HEADLEN, addr);
+}
+
+int TestFileExist(char *path){
+	int s=access(path, F_OK);
+	
+	if(!s) return 1;		
+	else return 0;	
+}

@@ -27,11 +27,14 @@ struct packet{
 };
 
 void StartServer(unsigned short port, char *dir, int write);
+void SetSocketTimeout(int sock, int sec);
 int CreateProcess();
 int RecvFrom(int sock, char *buff, int size, struct sockaddr_in* addr, socklen_t *len);
 void SendTo(int sock, char* buff, int size, struct sockaddr_in* addr);
 void MSendError(int csock, char *buff, struct sockaddr_in *addr, int errcode, char* msg);
 void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir);
 void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir);
+void SendAck(int sock, char *buff, struct sockaddr_in* addr, int num);
+int TestFileExist(char *path);
 
 #endif

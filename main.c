@@ -9,9 +9,9 @@
 #include "mft.h"
 
 #define BUFFLEN 512
-//TODO main.c(add mft) mft.c mft.h client.c
 
-void GetOpt(int argc, char **argv, char *dir, unsigned short *uport, unsigned short *tport);
+
+void GetOpt(int argc, char **argv, char *dir, unsigned short *uport, unsigned short *tport, int *write);
 void LoadHtmlDoc();
 void printServerInfo(int uport, int tport, char *dir);
 void sigchld_handler();
@@ -21,10 +21,11 @@ char *HTMLDOC=NULL;
 
 int main(int argc, char **argv){
 	unsigned short tport=80;
-	unsigned short cuport=999;//TODO
+	unsigned short uport=1900;
 	char workingDir[NAMELEN];
+	int write;
 		
-	GetOpt(argc, argv, workingDir, &cuport, &tport);
+	GetOpt(argc, argv, workingDir, &uport, &tport, &write);
 	LoadHtmlDoc();
 		
 	int ssock=SocketTCP(tport);
@@ -42,6 +43,8 @@ int main(int argc, char **argv){
 		printf("\x1B[33mERROR:\x1B[0m Sigaction error.\n");
 		exit(1);
 	}
+	
+	StartServer(uport, workingDir, write);
 	
 	while(1){
 		if((csock=accept(ssock, (struct sockaddr*)&caddr, &clen))==1){
@@ -72,33 +75,37 @@ int main(int argc, char **argv){
 
 
 
-void GetOpt(int argc, char **argv, char *dir, unsigned short *uport, unsigned short *tport){
+void GetOpt(int argc, char **argv, char *dir, unsigned short *uport, unsigned short *tport, int *write){
 	int c;
 	int sum=0;
 	
 	dir[0]=0;
+	*write=0;
 
-	while((c=getopt(argc, argv, "u:d:p:"))!=-1){
+	while((c=getopt(argc, argv, "u:d:p:w"))!=-1){
     	switch(c){
      		case 'd':			
 				strncpy(dir, optarg, NAMELEN);
-				++sum;
+				sum+=2;
         		break;
       		case 'p':
        			*tport=(unsigned short)atoi(optarg);
-				++sum;
+				sum+=2;
        			break;
 			case 'u':
 				*uport=(unsigned short)atoi(optarg);
-				++sum;
+				sum+=2;
 				break;
+			case 'w':
+				*write=1;
+				++sum;
       		default:
         		printf("Usage: [-u control_udp_port] [-d directory] [-p tcp_port]\n");
 				exit(1);
       	}
 	}
 	
-	if(argc!=(2*sum+1)){
+	if(argc!=(sum+1)){
 		printf("Usage: [-u control_udp_port] [-d directory] [-p tcp_port]\n");
 		exit(1);
 	}
