@@ -8,8 +8,8 @@ all: mweb mft
 mweb : $(OBJ)
 	$(CC) $(OBJ) -o mweb
 
-mft : client.o net.o mft.o
-	$(CC) client.o net.o mft.o -o mft
+mft : client.o net.o mft.o file.o
+	$(CC) client.o net.o mft.o file.o -o mft
 
 
 mimetype.o : mimetype.c

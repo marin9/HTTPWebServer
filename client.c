@@ -3,6 +3,7 @@
 #include <string.h>
 #include "mft.h"
 #include "net.h"
+#include "file.h"
 
 #define HELP	0
 #define STATUS	1
@@ -170,6 +171,12 @@ void PutFile(unsigned short port, char *host, char *name){
 			return;
 		}
 		++packNum;
+		
+		if(packNum%1000==0){
+			char str[16];
+			sizeToH(DATALEN*packNum, str, 16);
+			printf("%s received\n", str);
+		}
 	}
 	
 	printf("\x1B[32mFinish.\x1B[0m \n");
@@ -244,6 +251,12 @@ void GetFile(unsigned short port, char *host, char *name){
 			break;
 		}
 		++packNum;
+
+		if(packNum%1000==0){
+			char str[16];
+			sizeToH(DATALEN*packNum, str, 16);
+			printf("%s received\n", str);
+		}
 	}	
 	fclose(file);
 	close(sock);
