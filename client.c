@@ -149,7 +149,7 @@ void PutFile(unsigned short port, char *host, char *name){
 		
 		buff.code=DATA;
 		buff.num=packNum;		
-		
+
 		for(i=0;i<RETRNUM;++i){
 			SendTo(sock, (char*)&buff, n+HEADLEN, &addr);
 			

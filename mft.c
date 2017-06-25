@@ -166,7 +166,7 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 	SendAck(sock, buff, addr, packNum);
 	while(1){
 		++packNum;		
-		
+
 		for(i=0;i<RETRNUM;++i){
 			n=RecvFrom(sock, buff, sizeof(struct packet), &rcvaddr, &rcvlen);
 			if(n==-1) continue;
