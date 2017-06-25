@@ -170,7 +170,7 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		for(i=0;i<RETRNUM;++i){
 			n=RecvFrom(sock, buff, sizeof(struct packet), &rcvaddr, &rcvlen);
 			if(n==-1) continue;
-						
+	
 			if(!equalsAddr(addr, &rcvaddr)){ 
 				char tmpbuff[32];
 				MSendError(sock, tmpbuff, &rcvaddr, UNKNOWN_PORT, "Unknown port.\n");
@@ -185,16 +185,17 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 					return;
 				}
 				break;
+			}else if( ((struct packet*)buff)->code==DATA && ((struct packet*)buff)->num<packNum){
+				SendAck(sock, buff, addr, ((struct packet*)buff)->num);			
 			}
 		}
 		if(i==RETRNUM){
-			fclose(file);
 			remove(name);
 			break;
 		}
-		
+	
 		SendAck(sock, buff, addr, packNum);
-		if(n<DATALEN) break;		
+		if(n<DATALEN) break;	
 	}	
 	fclose(file);	
 }
