@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "mft.h"
+#include "net.h"
 
 #define HELP	0
 #define STATUS	1
@@ -13,15 +14,17 @@
 
 #define BUFFLEN		(HEADLEN+DATALEN)
 
-
 int GetCommand(char *buff);
+void PutFile(unsigned short port, char *host, char *buffer);
+void GetFile(unsigned short port, char *host, char *buffer);
 
-//TODO  client.c
+
 int main(){
 	unsigned short port=1900;
-	char host[INET_ADDRSTRLEN];
-	
+	char addr[INET_ADDRSTRLEN]={0};
+	char hostname[64]={0};
 	char buffer[BUFFLEN];
+	
 	while(1){
 		printf("\n>");
 		
@@ -37,12 +40,22 @@ int main(){
 			printf("get:filename - download file from server\n");
 			printf("quit - exit\n");
 			
-		}else if(0){
-			//TODO
+		}else if(cm==STATUS){
+			printf("Server: %s (%s)\n", hostname, addr);
+			printf("Port: %d\n", port);
 			
-		}else{
-			printf("Illegal command. Type 'help'.\n");
-		}
+		}else if(cm==SERVER){
+			memset(addr, 0, INET_ADDRSTRLEN);
+			strcpy(hostname, buffer);
+			
+			GetIpFromName(buffer, addr);
+			GetNameFromIP(buffer, hostname);						
+			
+		}else if(cm==PORT) port=atoi(buffer);			
+		else if(cm==PUT) PutFile(port, addr, buffer);		
+		else if(cm==GET) GetFile(port, addr, buffer);		
+		else if(cm==QUIT) break;			
+		else printf("Illegal command. Type 'help'.\n");
 	}	
 	return 0;
 }
@@ -71,6 +84,19 @@ int GetCommand(char *buff){
 	}
 	buff[j]=0;
 	return code;
+}    
+
+void PutFile(unsigned short port, char *host, char *buffer){
+	//TODO
+	port=atoi(host);
+	port=atoi(buffer);
+	printf("%d", port);
 }
 
+void GetFile(unsigned short port, char *host, char *buffer){
+	//TODO
+	port=atoi(host);
+	port=atoi(buffer);
+	printf("%d", port);
+}
 

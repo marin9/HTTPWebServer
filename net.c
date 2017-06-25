@@ -102,4 +102,31 @@ int equalsAddr(struct sockaddr_in* addr1, struct sockaddr_in* addr2){
 	return 1;
 }
 
+int GetNameFromIP(char *addr, char *name){
+	struct hostent *he;
+	struct in_addr ipv4addr;
+
+	if(inet_pton(AF_INET, addr, &ipv4addr)==1){
+		he=gethostbyaddr(&ipv4addr, sizeof ipv4addr, AF_INET);
+		if(he!=NULL){
+			strcpy(name, he->h_name);
+			return 1;
+		}
+	}	
+	return 0;
+}
+
+int GetIpFromName(char *name, char *addr){
+    struct hostent *he;
+    struct in_addr **addr_list;
+
+    if((he=gethostbyname(name))!=NULL) {  
+		addr_list=(struct in_addr**)he->h_addr_list;		
+		if(addr_list[0] != NULL){
+			strcpy(addr, inet_ntoa(*addr_list[0]));
+			return 1;
+		}
+    }
+    return 0;
+}
 
