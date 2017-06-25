@@ -15,8 +15,8 @@
 #define BUFFLEN		(HEADLEN+DATALEN)
 
 int GetCommand(char *buff);
-void PutFile(unsigned short port, char *host, char *buffer);
-void GetFile(unsigned short port, char *host, char *buffer);
+void PutFile(unsigned short port, char *host, char *name);
+void GetFile(unsigned short port, char *host, char *name);
 
 
 int main(){
@@ -86,17 +86,69 @@ int GetCommand(char *buff){
 	return code;
 }    
 
-void PutFile(unsigned short port, char *host, char *buffer){
+void PutFile(unsigned short port, char *host, char *name){
 	//TODO
 	port=atoi(host);
-	port=atoi(buffer);
+	port=atoi(name);
 	printf("%d", port);
 }
 
-void GetFile(unsigned short port, char *host, char *buffer){
-	//TODO
-	port=atoi(host);
-	port=atoi(buffer);
-	printf("%d", port);
+void GetFile(unsigned short port, char *host, char *name){
+	int sock=SocketUDP(0);
+	SetSocketTimeout(sock, 4);
+	
+	struct sockaddr_in addr;
+	struct sockaddr_in saddr;
+	socklen_t len=sizeof(addr);
+	socklen_t slen=sizeof(saddr);
+	struct packet buff;
+	
+	memset(&addr, 0, sizeof(addr));   
+	addr.sin_family=AF_INET;
+	addr.sin_port=htons(port);
+	inet_pton(AF_INET, host, &(addr.sin_addr));  
+	
+	FILE *file=fopen(name, "w+b");
+	if(file==NULL){
+		printf("\x1B[31mERROR:\x1B[0m Create file fail: %s.\n", strerror(errno));
+		close(sock);
+		return;
+	}
+	
+	buff.code=READ;
+	strcpy((char*)&buff+HEADLEN, name);
+	
+	SendTo(sock, (char*)&buff, BUFFLEN, &addr);
+	
+	int i, n, packNum=1;
+	while(1){
+		for(i=0;i<5;++i){
+			if(packNum==1) n=RecvFrom(sock, (char*)&buff, BUFFLEN, &saddr, &slen);
+			else n=RecvFrom(sock, (char*)&buff, BUFFLEN, &addr, &len);
+			
+			if(n==-1) continue;
+			else if(packNum!=1 && !equalsAddr(&addr, &saddr)) continue;
+			else if(buff.code==DATA && buff.num==packNum) break;
+		}		
+		if(i==5){
+			printf("\x1B[33mTimeout\x1B[0m \n");
+			break;
+		}		
+		
+		if(fwrite((char*)&buff+HEADLEN, 1, (n-HEADLEN), file)!=(n-HEADLEN)){
+			printf("\x1B[31mERROR:\x1B[0m File data write fail: %s.\n", strerror(errno));
+			break;
+		}
+		
+		if(n<DATALEN){
+			printf("\x1B[32mFinish.\x1B[0m \n");
+			break;
+		}
+		
+		SendAck(sock, (char*)&buff, &addr, packNum);
+		++packNum;
+	}	
+	fclose(file);
+	close(sock);
 }
 
