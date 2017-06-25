@@ -9,7 +9,7 @@
 #include "mft.h"
 
 #define BUFFLEN 512
-
+//TODO fix
 
 void GetOpt(int argc, char **argv, char *dir, unsigned short *uport, unsigned short *tport, int *write);
 void LoadHtmlDoc();
@@ -80,7 +80,7 @@ void GetOpt(int argc, char **argv, char *dir, unsigned short *uport, unsigned sh
 	int sum=0;
 	
 	dir[0]=0;
-	*write=0;
+	*write=1;//TODO
 
 	while((c=getopt(argc, argv, "u:d:p:w"))!=-1){
     	switch(c){
@@ -100,13 +100,13 @@ void GetOpt(int argc, char **argv, char *dir, unsigned short *uport, unsigned sh
 				*write=1;
 				++sum;
       		default:
-        		printf("Usage: [-u control_udp_port] [-d directory] [-p tcp_port]\n");
+        		printf("Usage: [-u control_udp_port] [-d directory] [-p tcp_port] [-w]\n");
 				exit(1);
       	}
 	}
-	
-	if(argc!=(sum+1)){
-		printf("Usage: [-u control_udp_port] [-d directory] [-p tcp_port]\n");
+
+	if(argc!=(sum+1)){//TODO sudo +1
+		printf("Usage: [-u control_udp_port] [-d directory] [-p tcp_port] [-w]\n");
 		exit(1);
 	}
 	

@@ -87,10 +87,94 @@ int GetCommand(char *buff){
 }    
 
 void PutFile(unsigned short port, char *host, char *name){
-	//TODO
-	port=atoi(host);
-	port=atoi(name);
-	printf("%d", port);
+	int sock=SocketUDP(0);
+	SetSocketTimeout(sock, 4);
+	
+	struct sockaddr_in addr;
+	struct sockaddr_in saddr;
+	socklen_t len=sizeof(addr);
+	socklen_t slen=sizeof(saddr);
+	struct packet buff;
+	
+	memset(&addr, 0, sizeof(addr));   
+	addr.sin_family=AF_INET;
+	addr.sin_port=htons(port);
+	inet_pton(AF_INET, host, &(addr.sin_addr));  
+	
+	FILE *file=fopen(name, "rb");
+	if(file==NULL){
+		printf("\x1B[31mERROR:\x1B[0m Open file fail: %s.\n", strerror(errno));
+		close(sock);
+		return;
+	}
+	
+	buff.code=WRITE;
+	strcpy((char*)&buff+HEADLEN, name);
+	SendTo(sock, (char*)&buff, BUFFLEN, &addr);
+	
+	int i;
+	for(i=0;i<5;++i){
+		if(RecvFrom(sock, (char*)&buff, BUFFLEN, &addr, &len)==-1) continue;	
+		if(buff.code==ACK && buff.num==0){
+			memcpy(&saddr, &addr, len);
+			slen=len;
+			break;
+			
+		}else if(buff.code==ERROR){
+			printf("\x1B[33m%s\x1B[0m \n", buff.data);
+			fclose(file);
+			close(sock);
+			return;
+		}
+	}
+	if(i==5){
+		printf("\x1B[33mTimeout\x1B[0m \n");
+		fclose(file);
+		close(sock);
+		return;
+	}
+	
+	int n, packNum=1;
+	struct packet recvBuff;
+		
+	while(!feof(file)){
+		n=fread((char*)&buff+HEADLEN, 1, DATALEN, file);
+		if(n<0){
+			printf("\x1B[31mError:\x1B[0m Read file error: %s.\n", strerror(errno));
+			fclose(file);
+			close(sock);
+			return;
+		}
+		
+		buff.code=DATA;
+		buff.num=packNum;		
+		
+		for(i=0;i<5;++i){
+			SendTo(sock, (char*)&buff, n+HEADLEN, &addr);
+			
+			int s=RecvFrom(sock, (char*)&recvBuff, HEADLEN, &saddr, &slen);		
+			if(s!=-1 && recvBuff.code==ACK && recvBuff.num==packNum && equalsAddr(&addr, &saddr)){
+				break;
+				
+			}else if(recvBuff.code==ERROR){
+				printf("\x1B[33m%s\x1B[0m \n", recvBuff.data);
+				fclose(file);
+				close(sock);
+				return;
+			}
+		}
+		if(i==5){
+			printf("\x1B[33mTimeout.\x1B[0m \n");
+			fclose(file);
+			close(sock);
+			return;
+		}
+		++packNum;
+	}
+	
+	printf("\x1B[32mFinish.\x1B[0m \n");
+	fclose(file);
+	close(sock);
 }
 
 void GetFile(unsigned short port, char *host, char *name){
@@ -142,7 +226,7 @@ void GetFile(unsigned short port, char *host, char *name){
 			}
 		}		
 		if(i==5){
-			printf("\x1B[33mTimeout\x1B[0m \n");
+			printf("\x1B[33mTimeout.\x1B[0m \n");
 			remove(name);
 			break;
 		}		

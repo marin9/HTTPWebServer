@@ -98,8 +98,7 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 	
 	SetSocketTimeout(sock, 3);
 	
-	int packNum=1;
-	int i;
+	int i, packNum=1;
 	struct sockaddr_in rcvaddr;
 	socklen_t rcvlen=sizeof(rcvaddr);
 	int ackResponse[2];
@@ -157,31 +156,42 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		return;
 	}
 	
+	int i, n;
 	int packNum=0;
 	struct sockaddr_in rcvaddr;
 	socklen_t rcvlen=sizeof(rcvaddr);
 	
+	SendAck(sock, buff, addr, packNum);
 	while(1){
-		SendAck(sock, buff, addr, packNum);
+		++packNum;		
 		
-		while(1){
-			int n=RecvFrom(sock, buff, sizeof(struct packet), &rcvaddr, &rcvlen);
+		for(i=0;i<5;++i){
+			n=RecvFrom(sock, buff, sizeof(struct packet), &rcvaddr, &rcvlen);
 						
 			if(!equalsAddr(addr, &rcvaddr)){ 
 				char tmpbuff[32];
 				MSendError(sock, tmpbuff, &rcvaddr, UNKNOWN_PORT, "Unknown port.\n");
 				continue;
 				
-			}else if( ((struct packet*)buff)->code==DATA && ((struct packet*)buff)->num==(packNum+1)){
-				int s=fwrite(buff+HEADLEN, 1, n, file);
-				if(s!=n){
+			}else if( ((struct packet*)buff)->code==DATA && ((struct packet*)buff)->num==packNum){
+				int s=fwrite(buff+HEADLEN, 1, n-HEADLEN, file); 
+				if(s!=(n-HEADLEN)){
 					MSendError(sock, buff, addr, NOT_DEFINED, strerror(errno));
+					fclose(file);
+					remove(name);
 					return;
 				}
 				break;
 			}
 		}
-		++packNum;
+		if(i==5){
+			fclose(file);
+			remove(name);
+			break;
+		}
+		
+		SendAck(sock, buff, addr, packNum);
+		if(n<DATALEN) break;		
 	}	
 	fclose(file);	
 }
