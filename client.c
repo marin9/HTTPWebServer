@@ -89,7 +89,7 @@ int GetCommand(char *buff){
 
 void PutFile(unsigned short port, char *host, char *name){
 	int sock=SocketUDP(0);
-	SetSocketTimeout(sock, 4);
+	SetSocketTimeout(sock, RETTIMEO);
 	
 	struct sockaddr_in addr;
 	struct sockaddr_in saddr;
@@ -114,7 +114,7 @@ void PutFile(unsigned short port, char *host, char *name){
 	SendTo(sock, (char*)&buff, BUFFLEN, &addr);
 	
 	int i;
-	for(i=0;i<5;++i){
+	for(i=0;i<RETRNUM;++i){
 		if(RecvFrom(sock, (char*)&buff, BUFFLEN, &addr, &len)==-1) continue;	
 		if(buff.code==ACK && buff.num==0){
 			memcpy(&saddr, &addr, len);
@@ -128,7 +128,7 @@ void PutFile(unsigned short port, char *host, char *name){
 			return;
 		}
 	}
-	if(i==5){
+	if(i==RETRNUM){
 		printf("\x1B[33mTimeout\x1B[0m \n");
 		fclose(file);
 		close(sock);
@@ -150,7 +150,7 @@ void PutFile(unsigned short port, char *host, char *name){
 		buff.code=DATA;
 		buff.num=packNum;		
 		
-		for(i=0;i<5;++i){
+		for(i=0;i<RETRNUM;++i){
 			SendTo(sock, (char*)&buff, n+HEADLEN, &addr);
 			
 			int s=RecvFrom(sock, (char*)&recvBuff, HEADLEN, &saddr, &slen);		
@@ -164,7 +164,7 @@ void PutFile(unsigned short port, char *host, char *name){
 				return;
 			}
 		}
-		if(i==5){
+		if(i==RETRNUM){
 			printf("\x1B[33mTimeout.\x1B[0m \n");
 			fclose(file);
 			close(sock);
@@ -186,7 +186,7 @@ void PutFile(unsigned short port, char *host, char *name){
 
 void GetFile(unsigned short port, char *host, char *name){
 	int sock=SocketUDP(0);
-	SetSocketTimeout(sock, 4);
+	SetSocketTimeout(sock, RETTIMEO);
 	
 	struct sockaddr_in addr;
 	struct sockaddr_in saddr;
@@ -213,7 +213,7 @@ void GetFile(unsigned short port, char *host, char *name){
 	
 	int i, n, packNum=1;
 	while(1){
-		for(i=0;i<5;++i){
+		for(i=0;i<RETRNUM;++i){
 			if(packNum==1){			
 				n=RecvFrom(sock, (char*)&buff, BUFFLEN, &saddr, &slen);
 				memcpy(&addr, &saddr, slen);
@@ -232,7 +232,7 @@ void GetFile(unsigned short port, char *host, char *name){
 				return;
 			}
 		}		
-		if(i==5){
+		if(i==RETRNUM){
 			printf("\x1B[33mTimeout.\x1B[0m \n");
 			remove(name);
 			break;

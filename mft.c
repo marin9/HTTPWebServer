@@ -96,7 +96,7 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		return;
 	}
 	
-	SetSocketTimeout(sock, 3);
+	SetSocketTimeout(sock, RETTIMEO);
 	
 	int i, packNum=1;
 	struct sockaddr_in rcvaddr;
@@ -112,7 +112,7 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		((struct packet*)buff)->code=DATA;
 		((struct packet*)buff)->num=packNum;		
 		
-		for(i=0;i<5;++i){
+		for(i=0;i<RETRNUM;++i){
 			SendTo(sock, buff, n+HEADLEN, addr);
 			
 			if(RecvFrom(sock, (char*)ackResponse, HEADLEN, &rcvaddr, &rcvlen)==-1){
@@ -127,7 +127,7 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 			}
 		}
 		
-		if(i==5) break;
+		if(i==RETRNUM) break;
 		++packNum;
 	}	
 	fclose(file);
@@ -156,6 +156,8 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		return;
 	}
 	
+	SetSocketTimeout(sock, RETTIMEO);
+	
 	int i, n;
 	int packNum=0;
 	struct sockaddr_in rcvaddr;
@@ -165,8 +167,9 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 	while(1){
 		++packNum;		
 		
-		for(i=0;i<5;++i){
+		for(i=0;i<RETRNUM;++i){
 			n=RecvFrom(sock, buff, sizeof(struct packet), &rcvaddr, &rcvlen);
+			if(n==-1) continue;
 						
 			if(!equalsAddr(addr, &rcvaddr)){ 
 				char tmpbuff[32];
@@ -175,7 +178,7 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 				
 			}else if( ((struct packet*)buff)->code==DATA && ((struct packet*)buff)->num==packNum){
 				int s=fwrite(buff+HEADLEN, 1, n-HEADLEN, file); 
-				if(s!=(n-HEADLEN)){
+				if(s!=(int)(n-HEADLEN)){
 					MSendError(sock, buff, addr, NOT_DEFINED, strerror(errno));
 					fclose(file);
 					remove(name);
@@ -184,7 +187,7 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 				break;
 			}
 		}
-		if(i==5){
+		if(i==RETRNUM){
 			fclose(file);
 			remove(name);
 			break;
