@@ -123,29 +123,42 @@ void GetFile(unsigned short port, char *host, char *name){
 	int i, n, packNum=1;
 	while(1){
 		for(i=0;i<5;++i){
-			if(packNum==1) n=RecvFrom(sock, (char*)&buff, BUFFLEN, &saddr, &slen);
+			if(packNum==1){			
+				n=RecvFrom(sock, (char*)&buff, BUFFLEN, &saddr, &slen);
+				memcpy(&addr, &saddr, slen);
+				len=slen;
+			}
 			else n=RecvFrom(sock, (char*)&buff, BUFFLEN, &addr, &len);
-			
+	
 			if(n==-1) continue;
 			else if(packNum!=1 && !equalsAddr(&addr, &saddr)) continue;
 			else if(buff.code==DATA && buff.num==packNum) break;
+			else if(buff.code==ERROR){
+				printf("\x1B[33m%s\x1B[0m", buff.data);
+				remove(name); 
+				fclose(file);
+				close(sock);
+				return;
+			}
 		}		
 		if(i==5){
 			printf("\x1B[33mTimeout\x1B[0m \n");
+			remove(name);
 			break;
 		}		
 		
 		if(fwrite((char*)&buff+HEADLEN, 1, (n-HEADLEN), file)!=(n-HEADLEN)){
 			printf("\x1B[31mERROR:\x1B[0m File data write fail: %s.\n", strerror(errno));
+			remove(name);
 			break;
 		}
+		
+		SendAck(sock, (char*)&buff, &addr, packNum);
 		
 		if(n<DATALEN){
 			printf("\x1B[32mFinish.\x1B[0m \n");
 			break;
 		}
-		
-		SendAck(sock, (char*)&buff, &addr, packNum);
 		++packNum;
 	}	
 	fclose(file);

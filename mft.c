@@ -127,6 +127,8 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 				break;
 			}
 		}
+		
+		if(i==5) break;
 		++packNum;
 	}	
 	fclose(file);
