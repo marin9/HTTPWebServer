@@ -18,7 +18,7 @@
 int GetCommand(char *buff);
 void PutFile(unsigned short port, char *host, char *name);
 void GetFile(unsigned short port, char *host, char *name);
-//TODO add request retransmission 
+//TODO add request retransmission, client get file exist
 
 int main(){
 	unsigned short port=1900;
