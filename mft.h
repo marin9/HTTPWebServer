@@ -20,7 +20,7 @@
 #define HEADLEN		(2*sizeof(int))
 #define DATALEN		1024
 #define RETRNUM		5
-#define RETTIMEO	4
+#define RETTIMEO	3
 
 struct packet{
 	int code;
