@@ -18,7 +18,7 @@
 int GetCommand(char *buff);
 void PutFile(unsigned short port, char *host, char *name);
 void GetFile(unsigned short port, char *host, char *name);
-
+//TODO add request retransmission 
 
 int main(){
 	unsigned short port=1900;
@@ -224,6 +224,10 @@ void GetFile(unsigned short port, char *host, char *name){
 			if(n==-1) continue;
 			else if(packNum!=1 && !equalsAddr(&addr, &saddr)) continue;
 			else if(buff.code==DATA && buff.num==packNum) break;
+			else if(buff.code==DATA && buff.num<packNum){
+				SendAck(sock, (char*)&buff, &addr, buff.num);
+				continue;
+			}
 			else if(buff.code==ERROR){
 				printf("\x1B[33m%s\x1B[0m", buff.data);
 				remove(name); 

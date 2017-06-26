@@ -16,6 +16,7 @@ void StartServer(unsigned short port, char* dir, int write){
 		else close(sock);
 		
 		int csock=SocketUDP(0);
+		SetSocketTimeout(sock, RETTIMEO);
 	
 		if(buffer.code==READ) ReadFile(csock, (char*)&buffer, &addr, dir);
 		else if(buffer.code==WRITE && write) WriteFile(csock, (char*)&buffer, &addr, dir);
@@ -96,18 +97,16 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		return;
 	}
 	
-	SetSocketTimeout(sock, RETTIMEO);
-	
 	int i, packNum=1;
 	struct sockaddr_in rcvaddr;
 	socklen_t rcvlen=sizeof(rcvaddr);
-	int ackResponse[2];
+	int ackbuff[2];
 		
 	while(!feof(file)){
 		int n=fread(buff+HEADLEN, 1, DATALEN, file);
 		if(n<0){
 			MSendError(sock, buff, &rcvaddr, NOT_DEFINED, strerror(errno));
-			return;
+			break;
 		}
 		((struct packet*)buff)->code=DATA;
 		((struct packet*)buff)->num=packNum;		
@@ -115,14 +114,14 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		for(i=0;i<RETRNUM;++i){
 			SendTo(sock, buff, n+HEADLEN, addr);
 			
-			if(RecvFrom(sock, (char*)ackResponse, HEADLEN, &rcvaddr, &rcvlen)==-1){
+			if(RecvFrom(sock, (char*)ackbuff, HEADLEN, &rcvaddr, &rcvlen)==-1){
 				continue;
 			
 			}else if(!equalsAddr(addr, &rcvaddr)){
 				char tmpbuff[32];
 				MSendError(sock, tmpbuff, &rcvaddr, UNKNOWN_PORT, "Unknown port.\n");
 				
-			}else if(ackResponse[0]==ACK && ackResponse[1]==packNum){
+			}else if(ackbuff[0]==ACK && ackbuff[1]==packNum){
 				break;
 			}
 		}
@@ -155,8 +154,6 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 		else MSendError(sock, buff, addr, NOT_DEFINED, strerror(errno));
 		return;
 	}
-	
-	SetSocketTimeout(sock, RETTIMEO);
 	
 	int i, n;
 	int packNum=0;
