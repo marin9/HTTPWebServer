@@ -18,7 +18,7 @@
 #define FILE_ALREADY_EXIST	6
 
 #define HEADLEN		(2*sizeof(int))
-#define DATALEN		1024
+#define DATALEN		64000
 #define RETRNUM		5
 #define RETTIMEO	3
 

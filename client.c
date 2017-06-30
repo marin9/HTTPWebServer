@@ -172,14 +172,15 @@ void PutFile(unsigned short port, char *host, char *name){
 		}
 		++packNum;
 		
-		if(packNum%1000==0){
-			char str[16];
-			sizeToH(DATALEN*packNum, str, 16);
-			printf("%s received\n", str);
+		if(packNum%10==0){
+			char str[32];
+			sizeToH(DATALEN*packNum, str, 16);			
+			fflush(stdout);		
+			printf("\r%s send   ", str);
 		}
 	}
 	
-	printf("\x1B[32mFinish.\x1B[0m \n");
+	printf("\n\x1B[32mFinish.\x1B[0m \n");
 	fclose(file);
 	close(sock);
 }
@@ -251,15 +252,16 @@ void GetFile(unsigned short port, char *host, char *name){
 		SendAck(sock, (char*)&buff, &addr, packNum);
 		
 		if(n<DATALEN){
-			printf("\x1B[32mFinish.\x1B[0m \n");
+			printf("\n\x1B[32mFinish.\x1B[0m \n");
 			break;
 		}
 		++packNum;
 
-		if(packNum%1000==0){
-			char str[16];
-			sizeToH(DATALEN*packNum, str, 16);
-			printf("%s received\n", str);
+		if(packNum%10==0){
+			char str[32];
+			sizeToH(DATALEN*packNum, str, 16);			
+			fflush(stdout);		
+			printf("\r%s received   ", str);
 		}
 	}	
 	fclose(file);

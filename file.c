@@ -74,15 +74,15 @@ void sizeToH(unsigned long size, char *buff, size_t max_len){
 	double s;
 
 	if(size>1000000000){
-		s=size/1000000000;
+		s=(double)size/1000000000;
 		mj[0]='G';
 
 	}else if(size>1000000){
-		s=size/1000000;
+		s=(double)size/1000000;
 		mj[0]='M';
 
 	}else if(size>1000){
-		s=size/1000;
+		s=(double)size/1000;
 		mj[0]='k';
 
 	}else{
