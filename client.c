@@ -18,7 +18,7 @@
 int GetCommand(char *buff);
 void PutFile(unsigned short port, char *host, char *name);
 void GetFile(unsigned short port, char *host, char *name);
-//TODO add request retransmission
+
 
 int main(){
 	unsigned short port=1900;
@@ -95,7 +95,7 @@ void PutFile(unsigned short port, char *host, char *name){
 	struct sockaddr_in saddr;
 	socklen_t len=sizeof(addr);
 	socklen_t slen=sizeof(saddr);
-	struct packet buff;
+	struct packet buff, rbuff;
 	
 	memset(&addr, 0, sizeof(addr));   
 	addr.sin_family=AF_INET;
@@ -111,18 +111,19 @@ void PutFile(unsigned short port, char *host, char *name){
 	
 	buff.code=WRITE;
 	strcpy((char*)&buff+HEADLEN, name);
-	SendTo(sock, (char*)&buff, BUFFLEN, &addr);
-	
+		
 	int i;
 	for(i=0;i<RETRNUM;++i){
-		if(RecvFrom(sock, (char*)&buff, BUFFLEN, &addr, &len)==-1) continue;	
-		if(buff.code==ACK && buff.num==0){
+		SendTo(sock, (char*)&buff, BUFFLEN, &addr);
+		
+		if(RecvFrom(sock, (char*)&rbuff, BUFFLEN, &addr, &len)==-1) continue;	
+		if(rbuff.code==ACK && rbuff.num==0){
 			memcpy(&saddr, &addr, len);
 			slen=len;
 			break;
 			
-		}else if(buff.code==ERROR){
-			printf("\x1B[33m%s\x1B[0m \n", buff.data);
+		}else if(rbuff.code==ERROR){
+			printf("\x1B[33m%s\x1B[0m \n", rbuff.data);
 			fclose(file);
 			close(sock);
 			return;
@@ -136,8 +137,6 @@ void PutFile(unsigned short port, char *host, char *name){
 	}
 	
 	int n, packNum=1;
-	struct packet recvBuff;
-		
 	while(!feof(file)){
 		n=fread((char*)&buff+HEADLEN, 1, DATALEN, file);
 		if(n<0){
@@ -153,12 +152,10 @@ void PutFile(unsigned short port, char *host, char *name){
 		for(i=0;i<RETRNUM;++i){
 			SendTo(sock, (char*)&buff, n+HEADLEN, &addr);
 			
-			int s=RecvFrom(sock, (char*)&recvBuff, HEADLEN, &saddr, &slen);		
-			if(s!=-1 && recvBuff.code==ACK && recvBuff.num==packNum && equalsAddr(&addr, &saddr)){
-				break;
-				
-			}else if(recvBuff.code==ERROR){
-				printf("\x1B[33m%s\x1B[0m \n", recvBuff.data);
+			int s=RecvFrom(sock, (char*)&rbuff, HEADLEN, &saddr, &slen);		
+			if(s!=-1 && rbuff.code==ACK && rbuff.num==packNum && equalsAddr(&addr, &saddr)) break;			
+			else if(rbuff.code==ERROR){
+				printf("\x1B[33m%s\x1B[0m \n", rbuff.data);
 				fclose(file);
 				close(sock);
 				return;
@@ -193,12 +190,11 @@ void GetFile(unsigned short port, char *host, char *name){
 	
 	int sock=SocketUDP(0);
 	SetSocketTimeout(sock, RETTIMEO);
-	
 	struct sockaddr_in addr;
 	struct sockaddr_in saddr;
 	socklen_t len=sizeof(addr);
 	socklen_t slen=sizeof(saddr);
-	struct packet buff;
+	struct packet buff, rbuff;
 	
 	memset(&addr, 0, sizeof(addr));   
 	addr.sin_family=AF_INET;
@@ -212,23 +208,21 @@ void GetFile(unsigned short port, char *host, char *name){
 		return;
 	}
 	
-	buff.code=READ;
-	strcpy((char*)&buff+HEADLEN, name);
-	
-	SendTo(sock, (char*)&buff, BUFFLEN, &addr);
-	
+	rbuff.code=READ;
+	strcpy((char*)&rbuff+HEADLEN, name);
+		
 	int i, n, packNum=1;
 	while(1){
 		for(i=0;i<RETRNUM;++i){
-			if(packNum==1){			
+			if(packNum==1){	
+				SendTo(sock, (char*)&rbuff, BUFFLEN, &addr);		
 				n=RecvFrom(sock, (char*)&buff, BUFFLEN, &saddr, &slen);
 				memcpy(&addr, &saddr, slen);
 				len=slen;
 			}
 			else n=RecvFrom(sock, (char*)&buff, BUFFLEN, &addr, &len);
 	
-			if(n==-1) continue;
-			else if(packNum!=1 && !equalsAddr(&addr, &saddr)) continue;
+			if(n==-1 || packNum!=1 || !equalsAddr(&addr, &saddr)) continue;
 			else if(buff.code==DATA && buff.num==packNum) break;
 			else if(buff.code==DATA && buff.num<packNum){
 				SendAck(sock, (char*)&buff, &addr, buff.num);
