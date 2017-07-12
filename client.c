@@ -210,19 +210,19 @@ void GetFile(unsigned short port, char *host, char *name){
 	
 	rbuff.code=READ;
 	strcpy((char*)&rbuff+HEADLEN, name);
-		
+
 	int i, n, packNum=1;
 	while(1){
 		for(i=0;i<RETRNUM;++i){
 			if(packNum==1){	
-				SendTo(sock, (char*)&rbuff, BUFFLEN, &addr);		
+				SendTo(sock, (char*)&rbuff, BUFFLEN, &addr);	
 				n=RecvFrom(sock, (char*)&buff, BUFFLEN, &saddr, &slen);
 				memcpy(&addr, &saddr, slen);
 				len=slen;
 			}
 			else n=RecvFrom(sock, (char*)&buff, BUFFLEN, &addr, &len);
 	
-			if(n==-1 || packNum!=1 || !equalsAddr(&addr, &saddr)) continue;
+			if(n==-1 || !equalsAddr(&addr, &saddr)) continue;
 			else if(buff.code==DATA && buff.num==packNum) break;
 			else if(buff.code==DATA && buff.num<packNum){
 				SendAck(sock, (char*)&buff, &addr, buff.num);
