@@ -108,18 +108,14 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 			MSendError(sock, buff, &rcvaddr, NOT_DEFINED, strerror(errno));
 			break;
 		}
-		((struct packet*)buff)->code=DATA;
-		((struct packet*)buff)->num=packNum;		
 		
+		((struct packet*)buff)->code=DATA;
+		((struct packet*)buff)->num=packNum;				
 		for(i=0;i<RETRNUM;++i){
 			SendTo(sock, buff, n+HEADLEN, addr);
-			
-			if(RecvFrom(sock, (char*)ackbuff, HEADLEN, &rcvaddr, &rcvlen)==-1){
-				continue;
-			
-			}else if(ackbuff[0]==ACK && ackbuff[1]==packNum && equalsAddr(addr, &rcvaddr)){
-				break;
-			}
+						
+			if(RecvFrom(sock, (char*)ackbuff, HEADLEN, &rcvaddr, &rcvlen)==-1) continue;
+			else if(ackbuff[0]==ACK && ackbuff[1]==packNum && equalsAddr(addr, &rcvaddr)) break;
 		}
 		
 		if(i==RETRNUM) break;
