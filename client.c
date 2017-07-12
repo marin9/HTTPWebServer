@@ -18,7 +18,7 @@
 int GetCommand(char *buff);
 void PutFile(unsigned short port, char *host, char *name);
 void GetFile(unsigned short port, char *host, char *name);
-//TODO add request retransmission, client get file exist, filesize%bufflen==0
+//TODO add request retransmission, filesize%bufflen==0
 
 int main(){
 	unsigned short port=1900;
@@ -186,6 +186,11 @@ void PutFile(unsigned short port, char *host, char *name){
 }
 
 void GetFile(unsigned short port, char *host, char *name){
+	if(TestFileExist(name)){
+		printf("File already exist.\n");
+		return;
+	}
+	
 	int sock=SocketUDP(0);
 	SetSocketTimeout(sock, RETTIMEO);
 	

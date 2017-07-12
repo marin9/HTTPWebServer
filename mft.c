@@ -117,11 +117,7 @@ void ReadFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 			if(RecvFrom(sock, (char*)ackbuff, HEADLEN, &rcvaddr, &rcvlen)==-1){
 				continue;
 			
-			}else if(!equalsAddr(addr, &rcvaddr)){
-				char tmpbuff[32];
-				MSendError(sock, tmpbuff, &rcvaddr, UNKNOWN_PORT, "Unknown port.\n");
-				
-			}else if(ackbuff[0]==ACK && ackbuff[1]==packNum){
+			}else if(ackbuff[0]==ACK && ackbuff[1]==packNum && equalsAddr(addr, &rcvaddr)){
 				break;
 			}
 		}
@@ -168,12 +164,8 @@ void WriteFile(int sock, char *buff, struct sockaddr_in* addr, char *dir){
 			n=RecvFrom(sock, buff, sizeof(struct packet), &rcvaddr, &rcvlen);
 			if(n==-1) continue;
 	
-			if(!equalsAddr(addr, &rcvaddr)){ 
-				char tmpbuff[32];
-				MSendError(sock, tmpbuff, &rcvaddr, UNKNOWN_PORT, "Unknown port.\n");
-				continue;
-				
-			}else if( ((struct packet*)buff)->code==DATA && ((struct packet*)buff)->num==packNum){
+			if(!equalsAddr(addr, &rcvaddr)) continue;
+			else if( ((struct packet*)buff)->code==DATA && ((struct packet*)buff)->num==packNum){
 				int s=fwrite(buff+HEADLEN, 1, n-HEADLEN, file); 
 				if(s!=(int)(n-HEADLEN)){
 					MSendError(sock, buff, addr, NOT_DEFINED, strerror(errno));

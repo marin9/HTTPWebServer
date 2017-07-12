@@ -14,8 +14,7 @@
 #define ACCESS_VIOLATION	2
 #define DISK_FULL			3
 #define ILLEGAL_OPERATION	4
-#define UNKNOWN_PORT		5
-#define FILE_ALREADY_EXIST	6
+#define FILE_ALREADY_EXIST	5
 
 #define HEADLEN		(2*sizeof(int))
 #define DATALEN		64000
