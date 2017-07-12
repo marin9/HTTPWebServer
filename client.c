@@ -18,7 +18,7 @@
 int GetCommand(char *buff);
 void PutFile(unsigned short port, char *host, char *name);
 void GetFile(unsigned short port, char *host, char *name);
-//TODO add request retransmission, filesize%bufflen==0
+//TODO add request retransmission
 
 int main(){
 	unsigned short port=1900;
@@ -187,7 +187,7 @@ void PutFile(unsigned short port, char *host, char *name){
 
 void GetFile(unsigned short port, char *host, char *name){
 	if(TestFileExist(name)){
-		printf("File already exist.\n");
+		printf("\x1B[33mFile already exist.\x1B[0m \n");
 		return;
 	}
 	
